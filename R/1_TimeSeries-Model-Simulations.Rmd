@@ -1,0 +1,82 @@
+---
+title: "Time Series Analysis & Simulations"
+author: "Syed Faaris Razi"
+date: '2022-08-04'
+geometry: "left=2cm,right=2cm,top=2cm,bottom=2cm"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Simulating Time-Series Models
+### MA(1) Process
+
+```{r  out.width='87%', fig.align = "center"}
+set.seed(0)
+
+Z = a = rnorm(100)
+theta = 0.4
+
+for (t in 2:100){
+  Z[t] = a[t] - theta*a[t-1] 
+}
+
+layout(1:2)
+plot(Z, type="l")
+
+acf(Z)
+```
+
+### MA(2) Process
+
+```{r}
+set.seed(1)
+
+Z = a = rnorm(100)
+theta = c(0.7, 0.4)
+
+for (t in 3:100){
+  Z[t] = a[t] - theta[1]*a[t-1] - theta[2]*a[t-2]
+}
+
+layout(1:2)
+plot(Z, type="l")
+
+acf(Z)
+```
+
+### AR(1) Process
+```{r}
+set.seed(2)
+
+x = a = rnorm(100)
+phi = 0.7
+
+for (t in 2:100){
+  x[t] = phi*x[t-1] + a[t]
+}
+
+layout(1:2)
+plot(Z, type="l")
+
+acf(x)
+```
+
+### AR(2) Process
+```{r}
+set.seed(3)
+
+x = a = rnorm(100)
+phi = c(-0.456, 0.7)
+
+for (t in 3:100){
+  x[t] = phi[1]*x[t-1] + phi[2]*x[t-2] + a[t]
+}
+
+layout(1:2)
+plot(Z, type="l")
+
+acf(x)
+```
