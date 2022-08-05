@@ -1,0 +1,105 @@
+---
+title: "Closing Prices for S&P 500, Microsoft, Apple, Facebook, and IBM"
+author: "Syed Faaris Razi"
+date: '2022-08-04'
+geometry: "left=2.5cm,right=2.5cm,top=2cm,bottom=2cm"
+output: html_document
+always_allow_html: true
+---
+
+```{r echo=F, eval=TRUE, message=F, warning=F}
+# Uncomment below code to install these necessary packages if they aren't already
+# packages = c('rugarch','tseries','scales','fGarch','car','readxl','PEIP','plotly','MASS','tidyverse','PerformanceAnalytics','zoo','gridExtra','xtable','stats','quantmod','dygraphs','moments')
+# 
+# for (pkg in packages){
+#   
+#   # If we don't have some/one of the above packages, install them:
+#   if(!(pkg %in% rownames(installed.packages()))){
+#     install.packages(pkg, repos = "http://cran.us.r-project.org")
+#     library(pkg, character.only = T)
+#   }
+# }
+
+packages = c('PEIP', 'quantmod', 'car', 'PerformanceAnalytics', 'zoo', 'scales','fGarch', 'plotly', 'rugarch', 'MASS', 'moments', 'stats', 'tseries')
+
+for (pkg in packages){
+  library(pkg, character.only = T)
+}
+```
+
+We will analyse a time-series dataset from *Yahoo Finance* on adjusted daily closing prices (from January $3^{rd}$ 2001
+to June $8^{th}$ 2017) for S&P500 (^GSPC), IBM (IBM), Microsoft (MSFT), and Apple (AAPL).
+
+### The Data
+
+```{r  out.width='87%', fig.align = "center", results = 'hide'}
+
+# The start and End dates od the downloadable data
+dt.start = '2014-01-01'
+dt.end = '2017-06-08'
+
+# Getting the closing price data per company
+companies = list(SP500=F, AAPL=T, MSFT=T, AAPL=T, FB=T, IBM=T)
+
+for (company in names(companies)){ 
+    instrument = company
+    
+    if (!companies[[company]]){
+        instrument = '^GSPC' 
+    }
+    assign(company,
+           get.hist.quote(instrument = instrument,
+                          start = dt.start, end = dt.end, 
+                          quote = c('AdjClose'),
+                          retclass = 'zoo')
+           )
+}
+
+data = merge(SP500, MSFT, AAPL, FB, IBM)
+```
+
+### Bollinger Band Forecasts for Microsoft
+
+Lets visualize a Bollinger Bands plot using Simple Moving Average for the adjusted closing prices for the above companies (S&P 500, Microsoft ... ). The function below *bollinger.bands_plot* will produce interactive plots for the companies:
+
+```{r warning=F, message=F}
+library(dygraphs)
+
+bollinger.bands_plot = function(company, n, name='company-XYZ'){
+
+    Price = company$Adjusted
+    
+    sma = SMA(Price, n)
+    sma.sd = rollapply(Price, width = n, FUN = sd)
+    bolband.sd = sma + 2*sma.sd*c(-1,1)
+    
+    sma.m = sma[c(1:n-1)]
+    
+    bolband.lower = bolband.sd[1]
+    bolband.upper = bolband.sd[2]
+    
+    
+    sma.fore = cbind(Price, sma.m, bolband.lower, bolband.upper)
+    
+    dygraph(sma.fore, main = paste0('Bollinger Band Forecasts for ',name)) %>%
+      dySeries('Price', label = 'Price', col = 'black') %>%
+      dySeries('sma.m', label = 'SMA', col = 'red') %>%
+      dySeries('bolband.lower', label = 'LB', col = 'green') %>%
+      dySeries('bolband.upper', label = 'UB', col = 'blue') %>%
+      dyLegend(width=300) %>%
+      dyRangeSelector(height = 20)
+}
+```
+
+```{r message=F, warning=F}
+all_companies = list('S&P 500'=SP500, Microsoft=MSFT, Apple=AAPL, Facebook=FB, 'IBM'=IBM)
+
+n = 30
+
+# Plotting per company
+bollinger.bands_plot(SP500, n = n, name = 'S&P 500')
+bollinger.bands_plot(SP500, n = n, name = 'Microsoft')
+bollinger.bands_plot(SP500, n = n, name = 'Apple')
+bollinger.bands_plot(SP500, n = n, name = 'Facebook')
+bollinger.bands_plot(SP500, n = n, name = 'IBM')
+```
